@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "local-example": {
+      "url": "http://127.0.0.1:9091/mcp",
+      "description": "Local MCP server (now + text_stats). Set disabled=false to enable.",
+      "disabled": false
+    },
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "description": "Optional stdio MCP fetch server (requires uvx installed).",
+      "disabled": true
+    }
+  }
+}

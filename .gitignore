@@ -1,0 +1,42 @@
+# Build
+/bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Go
+go-agent-studio
+go-agent-studio-linux*
+coverage.out
+.gocache/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+!.env.simple
+
+# Runtime
+*.db
+*.db-shm
+*.db-wal
+*.log
+/logs/
+/data/agent_studio.db*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs (keep in main repo only)
+docs/
+workdocs/
+TODO.md
+vendor

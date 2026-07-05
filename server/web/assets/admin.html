@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>管理控制台 - Go Agent Studio</title>
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <section id="loginContainer" class="login-container">
+    <div class="login-card">
+      <div class="login-logo" aria-hidden="true">AG</div>
+      <h2>管理控制台</h2>
+      <p>输入 Admin API Key 查看系统状态、MCP、会话和 Trace。</p>
+      <form id="loginForm" class="login-form">
+        <div class="login-input-group">
+          <label for="adminKeySecret">Admin API Key</label>
+          <input id="adminKeySecret" class="login-input" type="password" autocomplete="current-password" placeholder="例如 admin-key">
+        </div>
+        <button id="loginSubmitBtn" class="login-btn" type="submit">解锁控制台</button>
+        <div id="loginErrorMsg" class="login-error hidden" role="alert"></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="workspaceContainer" class="workspace-container-layout hidden">
+    <header class="dashboard-header">
+      <div class="brand">
+        <h1>Go Agent Studio</h1>
+        <span>Admin</span>
+      </div>
+      <div class="profile-area">
+        <button id="profileBtn" class="key-profile-btn" type="button">
+          <span class="key-status-dot" aria-hidden="true"></span>
+          Admin Key
+        </button>
+        <div id="profileDropdown" class="key-dropdown">
+          <label for="changeKeyInput">更换 API Key</label>
+          <input id="changeKeyInput" class="input-control" type="password" autocomplete="current-password">
+          <div class="dropdown-actions">
+            <button id="changeKeyCancelBtn" class="btn btn-sm" type="button">取消</button>
+            <button id="changeKeySaveBtn" class="btn btn-sm btn-primary" type="button">保存</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard-content">
+      <section class="admin-grid">
+        <div class="panel h-auto">
+          <div class="panel-header">
+            <h2>运行状态</h2>
+          </div>
+          <div class="panel-body">
+            <div id="capabilityMatrix" class="capability-grid">
+              <div class="status text-center text-muted grid-col-all">正在拉取状态...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel h-auto">
+          <div class="panel-header">
+            <h2>MCP 状态</h2>
+          </div>
+          <div class="panel-body p-0">
+            <div class="table-container border-none">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Server</th>
+                    <th>Transport</th>
+                    <th>Tools</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="mcpStatusBody">
+                  <tr><td colspan="4" class="status text-center text-muted">正在加载 MCP 工具清单...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-grid full-width">
+        <div class="panel h-auto">
+          <div class="panel-header">
+            <h2>会话管理</h2>
+            <button id="refreshSessionsBtn" class="btn btn-sm btn-primary" type="button">刷新会话</button>
+          </div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field-group">
+                <label for="sessionRoleFilter">角色</label>
+                <select id="sessionRoleFilter" class="input-control">
+                  <option value="">全部</option>
+                  <option value="customer">Customer</option>
+                  <option value="operator">Operator</option>
+                  <option value="admin">Admin</option>
+                  <option value="legacy">Legacy</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="sessionTimeFilter">最近小时数</label>
+                <input id="sessionTimeFilter" class="input-control" type="number" min="1" max="87600" value="8760">
+              </div>
+            </div>
+            <div class="table-container mt-16">
+              <table>
+                <thead>
+                  <tr>
+                    <th>会话 ID</th>
+                    <th>角色</th>
+                    <th>消息数</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="sessionListBody">
+                  <tr><td colspan="5" class="status text-center text-muted p-30-0">点击刷新会话。</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-grid full-width">
+        <div class="panel h-auto">
+          <div class="panel-header">
+            <h2>会话清理</h2>
+          </div>
+          <div class="panel-body">
+            <div class="form-grid">
+              <div class="field-group">
+                <label for="cleanupHours">早于小时数</label>
+                <input id="cleanupHours" class="input-control" type="number" min="1" max="87600" value="2160">
+              </div>
+              <div class="field-group">
+                <label for="cleanupRole">角色</label>
+                <select id="cleanupRole" class="input-control">
+                  <option value="">全部</option>
+                  <option value="customer">Customer</option>
+                  <option value="operator">Operator</option>
+                  <option value="admin">Admin</option>
+                  <option value="legacy">Legacy</option>
+                </select>
+              </div>
+              <button id="cleanupDryRunBtn" class="btn" type="button">试运行</button>
+              <button id="cleanupPurgeBtn" class="btn btn-danger" type="button">删除匹配会话</button>
+            </div>
+            <div id="cleanupResultContainer" class="cleanup-result-box hidden">
+              <h3 id="cleanupResultHeader" class="cleanup-result-header"></h3>
+              <pre id="cleanupResultDetails" class="trace-payload show-block"></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <div id="dialogueModal" class="overlay-modal hidden">
+    <div class="modal-content">
+      <div class="panel-header">
+        <h2 id="dialogueModalTitle">会话详情</h2>
+        <button id="closeDialogueModalBtn" class="btn btn-sm" type="button">关闭</button>
+      </div>
+      <div class="modal-body-flex">
+        <div id="dialogueModalMemory" class="memory-box hidden">
+          <h3 class="memory-title">Working Memory</h3>
+          <div id="dialogueModalSummary" class="text-sm"></div>
+          <ul id="dialogueModalFacts" class="memory-list"></ul>
+        </div>
+        <div id="dialogueModalMessages" class="chat-messages"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="traceModal" class="overlay-modal hidden">
+    <div class="modal-content">
+      <div class="panel-header">
+        <h2 id="traceModalTitle">Trace</h2>
+        <button id="closeTraceModalBtn" class="btn btn-sm" type="button">关闭</button>
+      </div>
+      <div class="modal-body-scroll-p18">
+        <div id="traceModalTimeline" class="trace-timeline"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/admin.js?v=2"></script>
+</body>
+</html>

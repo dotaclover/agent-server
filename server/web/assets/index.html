@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>劳动法智能客服 — AI Studio</title>
+  <link rel="stylesheet" href="/style.css?v=5">
+  <link rel="stylesheet" href="/github.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <button id="closeSidebarBtn" type="button" class="btn-close-sidebar" aria-label="关闭菜单">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div class="sidebar-brand">
+          <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>劳动法智能客服</span>
+        </div>
+        <button id="resetBtn" type="button" class="btn-new-chat">
+          <span class="plus-icon">+</span> 新建会话
+        </button>
+      </div>
+
+      <div class="sidebar-history-container">
+        <div class="history-title">历史会话</div>
+        <ul id="historyList" class="history-list">
+          <!-- Dynamically populated via JS -->
+          <li class="history-empty">暂无历史记录</li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="sidebarTraceBtn" type="button" class="btn-sidebar-action hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <span>会话 Trace 轨迹</span>
+        </button>
+        <button id="clearAllHistoryBtn" type="button" class="btn-sidebar-action secondary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <span>清空所有历史</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CHAT AREA -->
+    <main class="app-main">
+      <header class="topbar">
+        <button id="mobileMenuBtn" type="button" class="btn-mobile-menu" aria-label="打开菜单">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="topbar-info">
+          <h1 id="activeChatTitle">新会话</h1>
+          <div class="tag-list">
+            <span>试用期</span>
+            <span>合同</span>
+            <span>工资</span>
+            <span>辞退</span>
+            <span>社保</span>
+            <span>仲裁</span>
+          </div>
+        </div>
+      </header>
+
+      <section id="messages" class="messages" aria-live="polite">
+        <!-- Message list -->
+      </section>
+
+      <section id="suggestions" class="suggestions" aria-label="常见问题">
+        <button type="button" data-question="试用期一般多久？">试用期一般多久？</button>
+        <button type="button" data-question="公司试用期辞退我，正规的做法是怎样？">试用期被辞退怎么办？</button>
+        <button type="button" data-question="没签劳动合同可以主张什么权益？">没签合同怎么办？</button>
+      </section>
+
+      <form id="chatForm" class="composer">
+        <div class="textarea-wrapper">
+          <textarea id="messageInput" rows="2" placeholder="请描述你的劳动用工问题" aria-label="劳动用工问题"></textarea>
+          <button type="submit" class="btn-send-client" title="发送">
+            <svg class="send-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            <span class="send-btn-text">发送</span>
+          </button>
+        </div>
+      </form>
+    </main>
+
+    <!-- SLIDE-OUT DRAWER: Session trace browser -->
+    <div id="traceDrawer" class="trace-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title-wrapper">
+          <h2 class="drawer-title">会话可观测 Trace 轨迹</h2>
+          <div class="drawer-subtitle">
+            会话 ID: <span id="traceSessionValue"></span>
+            <button id="modalCopySessionBtn" class="copy-session-btn-icon" type="button" title="复制会话 ID">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span class="copy-text">复制</span>
+            </button>
+          </div>
+        </div>
+        <button id="closeTraceDrawerBtn" class="btn-close-drawer" type="button">关闭</button>
+      </div>
+      <div class="drawer-body">
+        <div class="trace-timeline" id="traceModalTimeline">
+          <div class="status text-center text-muted">正在查询 SQLite Trace 日志...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/marked.min.js"></script>
+  <script src="/highlight.min.js"></script>
+  <script src="/app.js?v=5"></script>
+</body>
+</html>
