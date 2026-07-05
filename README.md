@@ -1,176 +1,229 @@
-# Go Agent Demo
+# Go Agent Studio
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)](https://go.dev)
+Go Agent Studio 是一个 Go 写的本地 Agent 工程参考实现：Echo HTTP 服务、内嵌 Web 前端、SQLite 会话/Trace 持久化、LLM tool calling、显式 Agent 编排和 MCP 客户端扩展。
 
-> ⚠️ **重要提示**：本项目仅供技术学习与演示用途。项目中涉及的劳动法相关内容由 AI 生成，**不具有法律效力，不构成法律建议**。使用者应确保遵守所在国家和地区的法律法规，因使用本软件产生的任何后果由使用者自行承担。详见 [DISCLAIMER.md](DISCLAIMER.md)。
+当前代码以三端分离为主线，默认首页只展示 Customer 劳动法问答；Operator 和 Admin 是隐藏入口：
 
-Go 智能体工程平台。集成显式编排引擎、多领域 RAG、MCP 协议扩展和角色隔离，可作为 Agent 应用的参考实现或二次开发基础。
+- Customer：公开劳动法问答
+- Operator：需要 API Key 的内容运营助手
+- Admin：需要 API Key 的管理控制台
 
-## 功能特性
+## 快速启动
 
-- **显式编排引擎** — Planner → Router → Executor → Memory → 综合生成，单趟执行，每步可追踪
-- **多供应商支持** — 聊天 / 图片 / 视频 / Embedding 独立配置，支持 Ark、DeepSeek、OpenAI、Anthropic
-- **多领域 RAG** — 通用引擎 + 领域配置注入（同义词、权重、来源过滤），新增领域不改引擎
-- **MCP 协议** — HTTP/stdio 双传输，支持动态工具扩展
-- **角色隔离** — Customer / Operator / Admin 三端独立工具集和会话空间
-- **Prompt 外部化** — 提示词存为 `.txt` 文件，修改不需重新编译
-- **SSE 流式 + Trace** — 实时事件推送 + SQLite 持久化调用链路
-- **零 Mock** — 无 API key 直接报错，不返回假数据
-
-## 技术栈
-
-Go 1.23+ · Echo · SQLite（纯 Go，无 CGO）· 内嵌 Web 前端
-
-## 快速开始
-
-```bash
-git clone https://github.com/your-username/go-agent-demo.git
-cd go-agent-demo
-
-cp .env.simple .env
-# 编辑 .env，填入 API key
-
-go run . rag-build   # 构建 RAG 索引
-go run . serve       # 启动服务
+```powershell
+cd go-agent-studio
+copy .env.example .env
+# 编辑 .env，填入 DEEPSEEK_API_KEY
+go mod tidy
+go run . serve
 ```
 
-打开 http://127.0.0.1:9090
+默认服务地址是 [http://127.0.0.1:9090](http://127.0.0.1:9090)。也可以用命令行覆盖监听地址：
 
-```bash
-# 可选：启动 MCP 工具服务
-go run . mcp-serve --port 9091
+```powershell
+go run . serve --host 127.0.0.1 --port 9090
 ```
 
-### Docker
+`.env` 会在 `serve` 启动时自动加载；如需禁用自动加载，请在启动进程环境里设置 `APP_LOAD_DOTENV=false`。
 
-```bash
-docker build -t go-agent-demo .
-docker run --rm -p 9090:9090 -e ARK_API_KEY=your_key go-agent-demo
-```
+## 三端入口
 
-含 Ollama 本地 Embedding 的 Compose 部署见 `docker-compose.yml`。
+### Customer 端
+
+访问：[http://127.0.0.1:9090/](http://127.0.0.1:9090/) 或 `/index.html`
+
+- 公开访问，不需要 API Key
+- 使用 `SimpleChat`：LLM 直接 tool calling，执行工具后再综合回答
+- 内置工具：`search_labor_law`
+- 可选工具：连接成功的 MCP 工具会以 `{server}_{tool}` 名称暴露
+- 会话上限：`CUSTOMER_MAX_TURNS`
+- 每日访客上限：`CUSTOMER_MAX_DAILY_VISITORS`
+- SSE 事件：`session`、`message`、`tool_call`、`usage`、`heartbeat`、`error`、`done`
+
+`search_labor_law` 调用外部 RAG HTTP 服务，地址由 `CUSTOMER_RAG_API_ENDPOINT` 配置。当前仓库不包含本地 RAG 构建或检索服务。
+
+### Operator 端
+
+访问：[http://127.0.0.1:9090/operator.html](http://127.0.0.1:9090/operator.html)
+
+- 只有设置 `AGENT_OPERATOR_API_KEY` 时才注册 API 路由
+- API Key 支持 `X-Agent-API-Key` 或 `Authorization: Bearer ...`
+- 使用完整 Agent 编排：`LLMPlanner -> ToolRouter -> Executor -> WorkingMemory -> Synthesis`
+- 内置工具：
+  - `outline_creator`
+  - `content_writer`
+  - `style_refiner`
+  - `craft_image_prompt`
+  - `craft_video_prompt`
+- 可选工具：连接成功的 MCP 工具会以 `{server}_{tool}` 名称暴露
+- SSE 事件：`session`、`message`、`plan`、`step`、`route`、`execution`、`usage`、`heartbeat`、`error`、`done`
+
+注意：当前 `serve` 中 `MaxToolStepsPerRun` 是硬编码 `4`，不读取环境变量覆盖。
+
+### Admin 端
+
+访问：[http://127.0.0.1:9090/admin.html](http://127.0.0.1:9090/admin.html)
+
+- 只有设置 `AGENT_ADMIN_API_KEY` 时才注册 API 路由
+- API Key 支持 `X-Agent-API-Key` 或 `Authorization: Bearer ...`
+- 不提供 Admin Chat
+- 提供系统状态、会话列表、会话详情、Trace 查询、会话清理和 MCP 状态
+- Admin 工具注册表包含 `agent_status`，供能力状态和工具体系复用
+
+## API
+
+### Health
+
+- `GET /health/live`
+- `HEAD /health/live`
+- `GET /health/ready`
+- `HEAD /health/ready`
+
+### Customer API
+
+- `POST /api/v1/customer/chat`
+- `POST /api/v1/customer/reset`
+- `GET /api/v1/customer/tools`
+- `GET /api/v1/customer/sessions`
+- `GET /api/v1/customer/sessions/:id`
+- `GET /api/v1/customer/sessions/:id/trace`
+
+### Operator API
+
+需要 `AGENT_OPERATOR_API_KEY`。
+
+- `POST /api/v1/operator/agent/chat`
+- `POST /api/v1/operator/agent/reset`
+- `GET /api/v1/operator/agent/tools`
+- `GET /api/v1/operator/agent/sessions`
+- `GET /api/v1/operator/agent/sessions/:id`
+- `GET /api/v1/operator/agent/sessions/:id/trace`
+
+### Admin API
+
+需要 `AGENT_ADMIN_API_KEY`。
+
+- `GET /api/v1/admin/status`
+- `GET /api/v1/admin/sessions`
+- `GET /api/v1/admin/sessions/stats`
+- `POST /api/v1/admin/sessions/cleanup`
+- `GET /api/v1/admin/sessions/:id`
+- `GET /api/v1/admin/sessions/:id/trace`
+- `GET /api/v1/admin/mcp/status`
 
 ## 配置
 
-最简配置只需填一个 API key（`.env.simple`）：
+最小可用配置：
 
 ```env
-ARK_API_KEY=your_key
-ARK_CHAT_MODEL=doubao-seed-2-0-pro-260215
-AI_EMBEDDING_PROVIDER=ark
-ARK_EMBEDDING_MODEL=doubao-embedding-vision-250615
+DEEPSEEK_API_KEY=your-deepseek-api-key
+CUSTOMER_RAG_API_ENDPOINT=http://localhost:9093/api/search
+
+# 可选：开启内部端
+AGENT_OPERATOR_API_KEY=operator-key
+AGENT_ADMIN_API_KEY=admin-key
 ```
 
-完整配置见 `.env.example`：
+`AGENT_OPERATOR_API_KEY` 和 `AGENT_ADMIN_API_KEY` 可以为空；为空时对应路由不会注册。非空时至少 6 个字符，且两者不能相同。
 
-| 能力 | Provider |
-|---|---|
-| 聊天 | ark · deepseek · openai · openai-compatible · anthropic |
-| Embedding | local · ark · openai · openai-compatible |
-| 图片 | ark · openai |
-| 视频 | ark |
+当前有效环境变量以 `config/config.go` 为准：
+
+- 应用：`APP_NAME`、`APP_HOST`、`APP_PORT`、`APP_DB_PATH`、`APP_DEBUG`、`APP_ACCESS_LOG_ENABLED`
+- `.env` 加载：启动进程环境里的 `APP_LOAD_DOTENV=false` 可禁用自动加载
+- HTTP：`APP_READ_TIMEOUT`、`APP_WRITE_TIMEOUT`、`APP_IDLE_TIMEOUT`、`APP_SHUTDOWN_TIMEOUT`、`APP_BODY_LIMIT`、`APP_CORS_ALLOWED_ORIGINS`、`APP_SECURE_HEADERS_ENABLED`、`APP_HSTS_MAX_AGE`
+- 全局限流：`APP_RATE_LIMIT_ENABLED`、`APP_RATE_LIMIT_RPS`、`APP_RATE_LIMIT_BURST`
+- 聊天模型：`DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL`、`AI_TEMPERATURE`、`AI_MAX_TOKENS`、`AI_REQUEST_TIMEOUT`
+- MCP：`MCP_ENABLED`、`MCP_CONFIG_PATH`
+- Agent：`AGENT_MAX_MESSAGE_CHARS`、`AGENT_CHAT_TIMEOUT`、`AGENT_TOOL_TIMEOUT`、`AGENT_PLANNER_TIMEOUT`、`AGENT_AUTO_CONFIRM_MCP`
+- Customer：`CUSTOMER_MAX_TURNS`、`CUSTOMER_MAX_DAILY_VISITORS`、`CUSTOMER_RAG_API_ENDPOINT`
+- Operator：`AGENT_OPERATOR_API_KEY`、`OPERATOR_MAX_TURNS`
+- Admin：`AGENT_ADMIN_API_KEY`、`AGENT_AUDIT_LOG_ENABLED`、`ADMIN_SESSION_RETENTION_DAYS`
 
 ## 架构
 
-```
-User → Planner(工具 schema + 用户目标 → tool_calls → Plan)
-     → Router(选工具 + 补参数)
-     → Executor(超时 + 重试 + 截断)
-     → Memory(提取事实 + 收集结果)
-     → Synthesis(LLM 综合生成答案)
+Customer 流程：
+
+```text
+User -> SimpleChat
+     -> LLM tool_calls
+     -> Tool execution
+     -> LLM synthesis
+     -> SSE response + SQLite session/trace
 ```
 
-Planner 一次性把用户目标映射为多个工具步骤，Executor 单趟遍历执行后综合作答。内置安全栏限制单次运行的工具步骤数。
+Operator 流程：
+
+```text
+User -> Agent
+     -> LLMPlanner(tool_calls -> Plan)
+     -> ToolRouter
+     -> Executor
+     -> WorkingMemory
+     -> LLM synthesis
+     -> SSE response + SQLite session/trace
+```
+
+Admin 流程：
+
+```text
+User -> HTTP API
+     -> SQLite / capability status / MCP manager
+     -> JSON response
+```
 
 ## 项目结构
 
 ```text
-cmd/commands/          CLI: serve, rag-build, mcp-serve
+cmd/commands/          serve 命令、.env 加载
 config/                环境变量加载与校验
-modules/               HTTP Handler (agent, rag, mcp)
+modules/
+  customer/            Customer API Handler
+  operator/            Operator API Handler
+  mcp/                 MCP 状态 API
 services/
-  agentcore/           Agent 运行调度
-  orchestrator/        Planner / Router / Executor / Memory
-  llm/                 LLM Provider 实现
-  rag/                 RAG 引擎 + Embedding
-  tools/               内置工具注册
-  mcp/                 MCP 客户端
+  simplechat/          Customer 使用的轻量对话循环
+  agentcore/           Operator 使用的 Agent 核心
+  orchestrator/        Plan / Route / Execute / Memory 编排
+  tools/
+    customer/          Customer 工具
+    operator/          Operator 工具
+    admin/             Admin 工具
+  llm/                 DeepSeek 聊天适配器
   memory/              会话存储
-  trace/               调用链路追踪
-  persistence/         SQLite 连接管理
-server/                路由注册 + 内嵌前端
-data/prompts/          系统提示词（外部化）
-data/domains/          RAG 语料 / 索引 / 配置
+  trace/               Trace 事件记录
+  mcp/                 MCP 客户端
+  persistence/         SQLite 初始化与迁移
+server/
+  router/              HTTP 路由
+  web/assets/          内嵌前端资源
+data/prompts/          外部化 prompt
 ```
 
-## 工具
+## 建议阅读顺序
 
-| 工具 | 角色 | 说明 |
-|---|---|---|
-| `search_labor_law` | 全部 | RAG 知识库检索 |
-| `craft_image_prompt` | 全部 | LLM 润色图片生成 Prompt |
-| `craft_video_prompt` | 全部 | LLM 编写短视频分镜 Prompt |
-| `example_now` | 全部 | MCP 示例：当前时间 |
-| `example_text_stats` | 全部 | MCP 示例：字数统计 |
-| `agent_status` | Admin | 系统状态与配置 |
-| `generate_image` | Admin | 调用图片生成 API |
-| `generate_video` | Admin | 调用视频生成 API |
-
-MCP 工具通过 `mcp.json` 配置，支持 HTTP 和 stdio 两种接入方式。
-
-## API
-
-| 角色 | 端点 | 可见事件 |
-|---|---|---|
-| Customer | `/api/v1/agent/chat` | session · message · usage · done |
-| Operator | `/api/v1/operator/agent/chat` | + plan · step · route · execution |
-| Admin | `/api/v1/admin/agent/chat` | 全部 |
-
-```
-GET  /health/live                    健康检查
-GET  /api/v1/agent/tools             工具列表
-POST /api/v1/agent/chat              聊天（SSE 流式响应）
-GET  /api/v1/admin/status            系统状态
-GET  /api/v1/admin/sessions          会话列表
-POST /api/v1/admin/sessions/cleanup  会话清理
-GET  /api/v1/admin/mcp/status        MCP 状态
-```
-
-## RAG
-
-通用搜索引擎，通过配置文件注入领域行为。默认使用关键词 + 向量两路混合评分。支持同义词扩展、来源过滤、可插拔 Embedding。
-
-新增领域：
-
-```bash
-# 准备 JSONL 语料 + profile.json
-go run . rag-build --domain <domain_name>
-```
+1. `main.go`
+2. `cmd/commands/serve.go`
+3. `server/router/router.go`
+4. `services/simplechat/chat.go`
+5. `services/agentcore/agent.go`
+6. `services/orchestrator/loop.go`
+7. `services/tools/{customer,operator,admin}/`
 
 ## 验证
 
-```bash
-gofmt -l .            # 应无输出
+```powershell
+gofmt -l .
 go vet ./...
-staticcheck ./...
-go test ./...
 go build ./...
 ```
 
-## 扩展
+## 扩展方向
 
-1. **新领域** — `data/domains/` 添加语料和配置
-2. **新工具** — `services/tools/registry.go` 注册
-3. **新 Provider** — 实现 `aitypes.LLMProvider` 接口
-4. **MCP 扩展** — `mcp.json` 添加服务端配置
-5. **真实 RAG** — 切换 Embedding Provider + 接入向量数据库
-6. **多轮编排** — 在编排引擎外层包有界循环，支持跨步骤依赖
-
-## 免责声明
-
-本软件仅供技术学习与演示用途，不构成法律意见或专业咨询。详见 [DISCLAIMER.md](DISCLAIMER.md)。
+1. 新工具：在 `services/tools/{customer|operator|admin}/` 注册。
+2. DeepSeek 调优：修改 `DEEPSEEK_MODEL`、`AI_TEMPERATURE`、`AI_MAX_TOKENS` 等配置。
+3. 外部 MCP：在 `mcp.json` 添加 `url` 或 `command`，设置 `disabled: false`。
+4. Prompt 调优：直接修改 `data/prompts/agent_customer.txt`、`agent_operator.txt`、`agent_admin.txt`，无需重新编译。
 
 ## License
 
-[MIT](LICENSE)
+MIT

@@ -34,9 +34,6 @@ rsync -avz --delete $DRY_RUN \
     --exclude='.github/' \
     --exclude='.workflow/' \
     --exclude='.env' \
-    --exclude='README.md' \
-    --exclude='CLAUDE.md' \
-    --exclude='TODO.md' \
     --exclude='LICENSE' \
     --exclude='DISCLAIMER.md' \
     --exclude='docs/' \
