@@ -110,7 +110,8 @@ func callRAGAPI(ctx context.Context, endpoint, query string) (string, error) {
 			Source   string                 `json:"source"`
 			Metadata map[string]interface{} `json:"metadata"`
 		} `json:"results"`
-		Query string `json:"query"`
+		Query   string `json:"query"`
+		Message string `json:"message"`
 	}
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		// If response is not JSON, return as-is
@@ -120,6 +121,14 @@ func callRAGAPI(ctx context.Context, endpoint, query string) (string, error) {
 	// Format results for LLM consumption
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf("查询：%s\n\n", result.Query))
+	if len(result.Results) == 0 {
+		message := strings.TrimSpace(result.Message)
+		if message == "" {
+			message = "未找到达到最低相关度要求的参考资料。"
+		}
+		b.WriteString(message)
+		return strings.TrimSpace(b.String()), nil
+	}
 	b.WriteString("参考资料：\n\n")
 	for i, item := range result.Results {
 		content := strings.TrimSpace(item.Content)

@@ -35,3 +35,27 @@ func TestCallRAGAPIFormatsTextFieldResponse(t *testing.T) {
 		}
 	}
 }
+
+func TestCallRAGAPIReturnsNoResultsMessage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"query": "随便问",
+			"results": [],
+			"total": 0,
+			"min_score": 0.5,
+			"message": "未找到相关度不低于 50% 的参考资料，请换个更具体的问题或降低阈值后重试。"
+		}`))
+	}))
+	defer server.Close()
+
+	got, err := callRAGAPI(context.Background(), server.URL, "随便问")
+	if err != nil {
+		t.Fatalf("callRAGAPI returned error: %v", err)
+	}
+	for _, want := range []string{"查询：随便问", "未找到相关度不低于 50%"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("formatted empty result missing %q: %s", want, got)
+		}
+	}
+}
