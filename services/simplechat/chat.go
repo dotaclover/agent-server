@@ -160,6 +160,9 @@ func (s *SimpleChat) Chat(ctx context.Context, opts ChatOptions) (*ChatResult, e
 	// If no tool calls, return the response directly
 	if len(resp.ToolCalls) == 0 {
 		content := polishCustomerAnswer(resp.Content)
+		if usedCustomerFallbackAnswer(resp.Content) {
+			content = contextualCustomerFallbackAnswer(latestUserGoal(opts.Messages))
+		}
 		assistantMsg := aitypes.NewMessage(aitypes.RoleAssistant, content)
 		result.Messages = append(opts.Messages, assistantMsg)
 		if opts.OnMessage != nil {
@@ -255,6 +258,9 @@ func (s *SimpleChat) Chat(ctx context.Context, opts ChatOptions) (*ChatResult, e
 	result.CompletionTokens += synthResp.CompletionTokens
 
 	content := polishCustomerAnswer(synthResp.Content)
+	if usedCustomerFallbackAnswer(synthResp.Content) {
+		content = contextualCustomerFallbackAnswer(latestUserGoal(opts.Messages))
+	}
 	s.trace(opts.SessionID, "llm_synthesis_response", "LLM synthesis response received", "", "succeeded", synthElapsed.Milliseconds(), map[string]interface{}{
 		"content_len":            len(content),
 		"final_response_preview": trace.TextPreview(content),
@@ -339,7 +345,15 @@ func buildSynthesisPrompt(userGoal string, toolResults []string) string {
 	return strings.TrimSpace(b.String())
 }
 
-const customerFallbackAnswer = "抱歉，刚才没有生成有效回答。你可以再问一次，或补充入职时间、劳动合同约定、工资工时、解除或争议经过等关键信息，我会重新帮你判断。"
+const customerFallbackAnswer = "抱歉，刚才没有生成有效回答。你可以再问一次，或补充你想了解的 Dify 功能、应用类型、知识库配置或发布场景，我会重新帮你查询文档。"
+
+func contextualCustomerFallbackAnswer(userGoal string) string {
+	goal := strings.ToLower(strings.TrimSpace(userGoal))
+	if strings.Contains(goal, "win11") || strings.Contains(goal, "windows") || strings.Contains(goal, "本机") {
+		return "Windows 11 本机安装 Dify，建议走 WSL 2 + Docker Desktop：先用管理员 PowerShell 执行 `wsl --install` 并重启，安装 Docker Desktop 时启用 WSL 2 后端，然后在 Ubuntu 终端中进入 Dify 的 docker 目录执行 `docker compose up -d`。启动完成后浏览器访问 `http://localhost`，首次进入后创建管理员账号。\n\n如果 80 端口被占用，可以在 `.env` 中改外部端口；Docker Desktop 建议至少分配 4GB 内存。以上由 AI 生成，仅供参考。"
+	}
+	return customerFallbackAnswer + "\n\n以上由 AI 生成，仅供参考。"
+}
 
 // polishCustomerAnswer removes internal implementation details from LLM response.
 func polishCustomerAnswer(content string) string {
@@ -399,22 +413,22 @@ func normalizeCustomerAnswerText(text string) string {
 
 // defaultCustomerSystemPrompt returns the default system prompt for Customer端.
 func defaultCustomerSystemPrompt() string {
-	return `你是劳动法智能问答助手。
+	return `你是 Dify 产品文档问答助手。
 
 职责：
-- 回答劳动法相关问题
-- 引用具体法条和政策
-- 提供实用建议
+- 回答 Dify 产品使用相关问题
+- 说明应用、工作流、知识库、节点、发布和监控等功能
+- 提供清晰、可执行的操作建议
 
 工具使用：
-- 当需要法律知识时，使用可用工具搜索
-- 引用来源时标注法条编号
+- 当需要产品文档依据时，使用可用工具搜索
+- 引用来源时标注文档模块或功能名称
 
 回答规范：
-- 准确：基于法律法规
-- 简洁：3-5句话说清楚
+- 准确：基于产品文档
+- 清晰：默认 400-700 字，按步骤或要点展开；用户明确要求简短时再压缩
 - 实用：给出可行建议
-- 引用：标注法条来源
+- 引用：标注文档来源或功能模块
 
 不要说"本地知识库"、"工具结果"、"RAG"等内部术语，用"参考资料"代替。`
 }

@@ -29,7 +29,7 @@ func TestMessagePreviewsIncludeContentAndToolCalls(t *testing.T) {
 			Role:    aitypes.RoleAssistant,
 			Content: "需要先查资料",
 			ToolCalls: []aitypes.ToolCall{
-				{ID: "call_1", Name: "search_labor_law", Arguments: `{"query":"试用期"}`},
+				{ID: "call_1", Name: "search_product_docs", Arguments: `{"query":"Dify 工作流"}`},
 			},
 		},
 	}
@@ -42,7 +42,7 @@ func TestMessagePreviewsIncludeContentAndToolCalls(t *testing.T) {
 	if got[0].ContentPreview != "需要先查资料" {
 		t.Fatalf("unexpected content preview: %q", got[0].ContentPreview)
 	}
-	if len(got[0].ToolCalls) != 1 || got[0].ToolCalls[0].Name != "search_labor_law" {
+	if len(got[0].ToolCalls) != 1 || got[0].ToolCalls[0].Name != "search_product_docs" {
 		t.Fatalf("tool call preview missing: %#v", got[0].ToolCalls)
 	}
 }

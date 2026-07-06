@@ -10,14 +10,14 @@ import (
 func TestTitleFromMessagesUsesFirstUserMessage(t *testing.T) {
 	messages := []aitypes.Message{
 		aitypes.NewMessage(aitypes.RoleAssistant, "欢迎语"),
-		aitypes.NewMessage(aitypes.RoleUser, "试用期一般多久？"),
-		aitypes.NewMessage(aitypes.RoleAssistant, "试用期通常取决于劳动合同期限。"),
-		aitypes.NewMessage(aitypes.RoleUser, "那三年合同呢？"),
+		aitypes.NewMessage(aitypes.RoleUser, "Dify 工作流和对话流有什么区别？"),
+		aitypes.NewMessage(aitypes.RoleAssistant, "工作流适合单轮任务，对话流适合多轮对话。"),
+		aitypes.NewMessage(aitypes.RoleUser, "那知识库怎么接入？"),
 	}
 
 	got := TitleFromMessages(messages)
 
-	if got != "试用期一般多久？" {
+	if got != "Dify 工作流和对话流有什么区别？" {
 		t.Fatalf("expected first user question as title, got %q", got)
 	}
 }

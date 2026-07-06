@@ -166,7 +166,7 @@ func (l *LoopController) BuildSynthesisPrompt(plan Plan, mem *WorkingMemory, rol
 	} else if role == "operator" {
 		b.WriteString("请扮演面向运营人员的智能助手，基于下面的用户问题、最近对话和检索结果回答。\n\n")
 	} else {
-		b.WriteString("请扮演面向普通用户的劳动法智能客服，基于下面的用户问题、最近对话和检索结果回答。\n\n")
+		b.WriteString("请扮演面向普通用户的 Dify 产品文档助手，基于下面的用户问题、最近对话和检索结果回答。\n\n")
 	}
 	b.WriteString("用户问题与上下文：\n")
 	b.WriteString(plan.Goal)
@@ -204,8 +204,8 @@ func (l *LoopController) BuildSynthesisPrompt(plan Plan, mem *WorkingMemory, rol
 	} else {
 		b.WriteString("\n- 用自然客服口吻，直接回答用户当前问题，不要用“结论：”“依据：”作为固定开头。")
 		b.WriteString("\n- 如果用户是在追问，必须结合最近对话理解省略信息。")
-		b.WriteString("\n- 如果参考资料标记 reliable_references=false，说明检索没有可靠命中；不要硬编法条引用，优先说明需要结合事实判断或只给一般性提示。")
-		b.WriteString("\n- 可以说“根据《劳动合同法》第十九条”等法条来源，但不要提“本地知识库”“工具结果”“RAG”“mock”“执行计划”。")
+		b.WriteString("\n- 如果参考资料标记 reliable_references=false，说明检索没有可靠命中；不要硬编产品功能细节，优先说明需要查看对应文档或补充具体场景。")
+		b.WriteString("\n- 可以引用 Dify 文档模块、功能名称或配置项，但不要提“本地知识库”“工具结果”“RAG”“mock”“执行计划”。")
 		b.WriteString("\n- 不要要求用户补充与当前问题无关的信息；只有事实确实不足时才追问关键事实。")
 		b.WriteString("\n- 末尾加一句：以上由 AI 生成，仅供参考。")
 	}

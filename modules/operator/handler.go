@@ -479,8 +479,8 @@ func publicToolSummaries(registry *aitypes.ToolRegistry) []publicToolSummary {
 
 func publicToolDescription(name string) string {
 	switch name {
-	case "search_labor_law":
-		return "劳动法咨询能力"
+	case "search_product_docs":
+		return "产品文档检索能力"
 	case "craft_image_prompt":
 		return "AI 图片生成 Prompt 助手"
 	case "craft_video_prompt":

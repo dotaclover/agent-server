@@ -28,9 +28,9 @@ func TestPolishCustomerAnswerFallsBackForDisclaimerOnlyContent(t *testing.T) {
 }
 
 func TestPolishCustomerAnswerKeepsNormalContent(t *testing.T) {
-	got := polishCustomerAnswer("结论：试用期最长不得超过六个月。")
+	got := polishCustomerAnswer("结论：工作流适合处理单轮任务。")
 
-	if !stringsContains(got, "试用期最长不得超过六个月。") {
+	if !stringsContains(got, "工作流适合处理单轮任务。") {
 		t.Fatalf("normal content was not preserved: %q", got)
 	}
 	if !stringsContains(got, "以上由 AI 生成，仅供参考。") {
@@ -45,7 +45,7 @@ func TestUsedCustomerFallbackAnswer(t *testing.T) {
 	if !usedCustomerFallbackAnswer("以上由 AI 生成，仅供参考。") {
 		t.Fatal("disclaimer-only answer should be marked as fallback")
 	}
-	if usedCustomerFallbackAnswer("试用期最长不得超过六个月。") {
+	if usedCustomerFallbackAnswer("工作流适合处理单轮任务。") {
 		t.Fatal("normal answer should not be marked as fallback")
 	}
 }

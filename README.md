@@ -2,9 +2,9 @@
 
 Go Agent Studio 是一个 Go 写的本地 Agent 工程参考实现：Echo HTTP 服务、内嵌 Web 前端、SQLite 会话/Trace 持久化、LLM tool calling、显式 Agent 编排和 MCP 客户端扩展。
 
-当前代码以三端分离为主线，默认首页只展示 Customer 劳动法问答；Operator 和 Admin 是隐藏入口：
+当前代码以三端分离为主线，默认首页只展示 Customer 产品文档问答；Operator 和 Admin 是隐藏入口：
 
-- Customer：公开劳动法问答
+- Customer：公开 Dify 产品文档问答
 - Operator：需要 API Key 的内容运营助手
 - Admin：需要 API Key 的管理控制台
 
@@ -34,13 +34,13 @@ go run . serve --host 127.0.0.1 --port 9090
 
 - 公开访问，不需要 API Key
 - 使用 `SimpleChat`：LLM 直接 tool calling，执行工具后再综合回答
-- 内置工具：`search_labor_law`
+- 内置工具：`search_product_docs`
 - 可选工具：连接成功的 MCP 工具会以 `{server}_{tool}` 名称暴露
 - 会话上限：`CUSTOMER_MAX_TURNS`
 - 每日访客上限：`CUSTOMER_MAX_DAILY_VISITORS`
 - SSE 事件：`session`、`message`、`tool_call`、`usage`、`heartbeat`、`error`、`done`
 
-`search_labor_law` 调用外部 RAG HTTP 服务，地址由 `CUSTOMER_RAG_API_ENDPOINT` 配置。当前仓库不包含本地 RAG 构建或检索服务。
+`search_product_docs` 调用外部 RAG HTTP 服务，地址由 `CUSTOMER_RAG_API_ENDPOINT` 配置。当前仓库不包含本地 RAG 构建或检索服务。
 
 ### Operator 端
 

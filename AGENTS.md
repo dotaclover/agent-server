@@ -4,10 +4,10 @@ This repository is a compact learning/demo project for Go Agent patterns.
 
 ## Product Intent
 
-- Default user-facing experience is the Customer labor-law Q&A at `/`.
+- Default user-facing experience is the Customer Dify product documentation Q&A at `/`.
 - Operator and Admin are intentional hidden entries at `/operator.html` and `/admin.html`.
 - Keep the project small and readable. Prefer removing unused knobs over preserving platform-like configuration.
-- External RAG is intentionally outside this repo. Customer uses `CUSTOMER_RAG_API_ENDPOINT` through the `search_labor_law` tool.
+- External RAG is intentionally outside this repo. Customer uses `CUSTOMER_RAG_API_ENDPOINT` through the `search_product_docs` tool.
 - MCP default behavior is intentional; do not change `mcp.json` defaults unless the user asks.
 
 ## Current Architecture

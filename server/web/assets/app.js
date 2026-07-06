@@ -1,5 +1,5 @@
-const sessionStorageKey = "labor-law-agent-session";
-const historyStorageKey = "labor-law-agent-history";
+const sessionStorageKey = "product-docs-agent-session";
+const historyStorageKey = "product-docs-agent-history";
 const sessionIDPattern = /^[A-Za-z0-9_-]{1,96}$/;
 
 let sessionId = normalizeSessionId(readStoredSessionId());
@@ -236,8 +236,14 @@ function updateSuggestionsVisibility() {
 }
 
 function addMessage(message) {
-  const item = document.createElement("article");
   const role = message.role || "assistant";
+  const content = message.content || "";
+
+  if (role === "assistant" && !hasRenderableContent(content)) {
+    return null;
+  }
+
+  const item = document.createElement("article");
   item.className = `message ${role}`;
   
   // Create avatar badge
@@ -251,13 +257,14 @@ function addMessage(message) {
   
   const body = document.createElement("div");
   body.className = "message-body";
-  body.innerHTML = parseMarkdown(message.content || "");
+  body.innerHTML = parseMarkdown(content);
   
   item.appendChild(avatar);
   item.appendChild(body);
   messagesEl.appendChild(item);
   messagesEl.scrollTop = messagesEl.scrollHeight;
   updateSuggestionsVisibility();
+  return item;
 }
 
 function addStatus(text) {
@@ -500,7 +507,7 @@ function startNewSession(callServerReset = false) {
 function showWelcomeMessage() {
   addMessage({
     role: "assistant",
-    content: "您好！我是您的**劳动法智能客服**。我可以帮您解答试用期、合同、工资、加班、社保、工伤、年假、辞退、经济补偿或劳动仲裁等劳动用工相关问题。请问今天有什么我可以帮您的？"
+    content: "您好！我是 **Dify 产品文档助手**。我可以帮您查询应用类型、工作流、对话流、知识库、节点配置、发布方式、监控日志和团队管理等产品问题。请问今天想了解什么？"
   });
 }
 

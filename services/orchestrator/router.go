@@ -38,7 +38,7 @@ func (r *ToolRouter) Route(goal string, step Step) (RouteDecision, error) {
 	args := copyArguments(step.Arguments)
 
 	// Auto-confirm destructive external MCP tools when enabled.
-	if r.autoConfirmMCP && strings.Contains(toolName, "_") && !strings.HasPrefix(toolName, "generate_") && toolName != "search_labor_law" && toolName != "agent_status" {
+	if r.autoConfirmMCP && strings.Contains(toolName, "_") && !strings.HasPrefix(toolName, "generate_") && toolName != "search_product_docs" && toolName != "agent_status" {
 		setDefaultArg(args, "confirm_destructive", true)
 	}
 

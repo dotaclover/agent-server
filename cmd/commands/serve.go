@@ -89,7 +89,7 @@ func (c *ServeCommand) Execute(args []string) error {
 		} else if err := mcpManager.RegisterTools(ctx, adminRegistry); err != nil {
 			utils.Logger.Printf("[MCP] register tools failed: %v", err)
 		} else {
-			// Keep public Customer focused on labor-law Q&A; expose MCP examples to Operator/Admin only.
+			// Keep public Customer focused on product documentation Q&A; expose MCP examples to Operator/Admin only.
 			mcpManager.CopyTools(operatorRegistry, adminRegistry)
 		}
 		cancel()

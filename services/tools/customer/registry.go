@@ -26,19 +26,19 @@ type Config struct {
 // RegisterTools registers all customer-facing tools.
 func RegisterTools(registry *aitypes.ToolRegistry, cfg Config) {
 	if cfg.RAGAPIEndpoint != "" {
-		registerSearchLaborLaw(registry, cfg.RAGAPIEndpoint)
+		registerSearchProductDocs(registry, cfg.RAGAPIEndpoint)
 	}
 }
 
-// registerSearchLaborLaw registers the labor law search tool that calls external RAG API.
-func registerSearchLaborLaw(registry *aitypes.ToolRegistry, endpoint string) {
+// registerSearchProductDocs registers the product documentation search tool that calls external RAG API.
+func registerSearchProductDocs(registry *aitypes.ToolRegistry, endpoint string) {
 	registry.Register(&aitypes.Tool{
-		Name:        "search_labor_law",
-		Description: "搜索劳动法知识库，返回相关法条、案例和政策解释。适用于试用期、劳动合同、工资、加班、社保、工伤、年假、辞退、离职、经济补偿、仲裁等劳动用工问题。",
+		Name:        "search_product_docs",
+		Description: "搜索 Dify 中文产品文档，返回应用类型、工作流、知识库、节点、发布、监控、团队和模型配置等相关说明。",
 		Parameters: `{
 			"type":"object",
 			"properties":{
-				"query":{"type":"string","description":"搜索关键词或问题，例如：试用期最长多久、加班费如何计算"}
+				"query":{"type":"string","description":"搜索关键词或问题，例如：Dify 怎么创建知识库、工作流和对话流有什么区别"}
 			},
 			"required":["query"]
 		}`,
@@ -66,7 +66,7 @@ func callRAGAPI(ctx context.Context, endpoint, query string) (string, error) {
 	}
 
 	reqBody := map[string]interface{}{
-		"query": query,
+		"query": enrichProductDocsQuery(query),
 		"top_k": 5,
 	}
 	data, err := json.Marshal(reqBody)
@@ -160,4 +160,46 @@ func normalizeRequiredToolText(field, value string) (string, error) {
 		return "", fmt.Errorf("%s is too long; max %d characters", field, maxToolTextChars)
 	}
 	return value, nil
+}
+
+func enrichProductDocsQuery(query string) string {
+	lower := strings.ToLower(query)
+	if strings.Contains(lower, "dify") {
+		return query
+	}
+
+	var hints []string
+	add := func(terms ...string) {
+		for _, term := range terms {
+			if !strings.Contains(lower, strings.ToLower(term)) {
+				hints = append(hints, term)
+			}
+		}
+	}
+
+	productish := false
+	for _, term := range []string{
+		"知识库", "工作流", "对话流", "聊天助手", "agent", "节点", "模型", "插件", "发布",
+		"应用", "安装", "部署", "本地", "线上", "版本", "区别", "主要功能", "功能",
+	} {
+		if strings.Contains(lower, strings.ToLower(term)) {
+			productish = true
+			break
+		}
+	}
+	if !productish {
+		return query
+	}
+
+	add("Dify")
+	if strings.Contains(query, "本地") || strings.Contains(query, "线上") || strings.Contains(query, "版本") || strings.Contains(query, "区别") {
+		add("Dify Cloud", "自部署", "Community Edition")
+	}
+	if strings.Contains(query, "安装") || strings.Contains(query, "部署") {
+		add("Docker Compose")
+	}
+	if strings.Contains(query, "主要功能") || strings.Contains(query, "功能") {
+		add("应用类型", "工作流", "对话流", "知识库", "Agent", "发布")
+	}
+	return strings.TrimSpace(query + " " + strings.Join(hints, " "))
 }

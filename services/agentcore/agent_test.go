@@ -34,12 +34,12 @@ func TestPolishCustomerAnswerFallsBackForDisclaimerOnlyContent(t *testing.T) {
 }
 
 func TestPolishCustomerAnswerKeepsNormalContent(t *testing.T) {
-	got, polished := polishCustomerAnswer("结论：试用期最长不得超过六个月。")
+	got, polished := polishCustomerAnswer("结论：工作流适合处理单轮任务。")
 
 	if !polished {
 		t.Fatal("normal customer answer should be polished when disclaimer is appended")
 	}
-	if !stringsContains(got, "试用期最长不得超过六个月。") {
+	if !stringsContains(got, "工作流适合处理单轮任务。") {
 		t.Fatalf("normal content was not preserved: %q", got)
 	}
 	if !stringsContains(got, "以上由 AI 生成，仅供参考。") {

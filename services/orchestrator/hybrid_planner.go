@@ -246,8 +246,8 @@ func toolNamesFromList(tools []*aitypes.Tool) []string {
 // TitleFromName returns a human-readable Chinese title for a tool name.
 func toolTitleFromName(name string) string {
 	switch name {
-	case "search_labor_law":
-		return "检索劳动法知识库"
+	case "search_product_docs":
+		return "检索产品文档"
 	case "craft_image_prompt":
 		return "生成图片 Prompt"
 	case "craft_video_prompt":
@@ -276,7 +276,7 @@ func toolTitleFromName(name string) string {
 // default-argument filling.
 func toolIntentFromName(name string) string {
 	switch name {
-	case "search_labor_law":
+	case "search_product_docs":
 		return "retrieve_references"
 	case "craft_image_prompt":
 		return "generate_image_prompt"

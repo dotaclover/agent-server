@@ -198,13 +198,13 @@ async function loadSystemStatus() {
       </div>
       
       <div class="capability-card">
-        <span class="capability-title">外部劳动法 RAG</span>
+        <span class="capability-title">外部产品文档 RAG</span>
         <div class="capability-info">
-          Customer 工具: <strong class="text-success">${status.tools?.customer?.names?.includes("search_labor_law") ? "已注册" : "未注册"}</strong>
+          Customer 工具: <strong class="text-success">${status.tools?.customer?.names?.includes("search_product_docs") ? "已注册" : "未注册"}</strong>
         </div>
         <div class="capability-detail">
           检索能力由外部 HTTP 服务提供。<br>
-          主程序只负责调用 search_labor_law 工具。
+          主程序只负责调用 search_product_docs 工具。
         </div>
       </div>
       

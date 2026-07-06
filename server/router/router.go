@@ -10,8 +10,8 @@ import (
 	"go-agent-studio/common"
 	"go-agent-studio/config"
 	customermodule "go-agent-studio/modules/customer"
-	operatormodule "go-agent-studio/modules/operator"
 	mcpmodule "go-agent-studio/modules/mcp"
+	operatormodule "go-agent-studio/modules/operator"
 	"go-agent-studio/server/web"
 	"go-agent-studio/services/agentcore"
 	"go-agent-studio/services/aitypes"
@@ -104,8 +104,8 @@ func RegisterRoutes(e *echo.Echo, deps Deps) {
 		api.Use(rateLimiter(deps.RateLimit))
 	}
 	auditLogger := internalAuditLogger(deps)
-	
-	// Customer端 (公开，劳动法问答)
+
+	// Customer端 (公开，产品文档问答)
 	var customerPrompt string
 	if data, err := os.ReadFile(filepath.Join("data/prompts", "agent_customer.txt")); err == nil {
 		customerPrompt = string(data)
@@ -130,7 +130,7 @@ func RegisterRoutes(e *echo.Echo, deps Deps) {
 		},
 	)
 	customermodule.RegisterRoutes(api.Group("/customer"))
-	
+
 	// Operator端 (需要API Key，写作助手)
 	if deps.Auth.OperatorAPIKey != "" && deps.OperatorTools != nil {
 		operator := api.Group("/operator")
@@ -172,7 +172,7 @@ func RegisterRoutes(e *echo.Echo, deps Deps) {
 			return getAdminSession(c, deps)
 		})
 	}
-	
+
 	web.Register(e)
 }
 

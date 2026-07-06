@@ -2,7 +2,6 @@ package orchestrator
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 )
 
@@ -11,7 +10,7 @@ type WorkingMemory struct {
 }
 
 func NewWorkingMemory(goal string) *WorkingMemory {
-	return &WorkingMemory{Snapshot: MemorySnapshot{Goal: goal, Facts: ExtractLaborLawFacts(goal)}}
+	return &WorkingMemory{Snapshot: MemorySnapshot{Goal: goal, Facts: ExtractProductDocFacts(goal)}}
 }
 
 func (m *WorkingMemory) SetPlan(plan Plan) {
@@ -36,15 +35,7 @@ func (m *WorkingMemory) BuildSummary() string {
 	return strings.Join(parts, "; ")
 }
 
-var (
-	contractYearsPatterns = []*regexp.Regexp{
-		regexp.MustCompile(`合同(?:期限)?(?:是|为|签|签订|约定)?\s*([一二两三四五六七八九十0-9]+)\s*年`),
-		regexp.MustCompile(`签(?:了|订)?\s*([一二两三四五六七八九十0-9]+)\s*年(?:合同|期限)?`),
-	}
-	workedMonthsPattern = regexp.MustCompile(`(?:工作|试用|入职|干了).{0,8}?([一二两三四五六七八九十0-9]+)\s*个?月`)
-)
-
-func ExtractLaborLawFacts(text string) []string {
+func ExtractProductDocFacts(text string) []string {
 	userText := userAuthoredFactText(text)
 	if userText == "" {
 		return nil
@@ -61,23 +52,23 @@ func ExtractLaborLawFacts(text string) []string {
 		seen[fact] = struct{}{}
 		facts = append(facts, fact)
 	}
-	for _, pattern := range contractYearsPatterns {
-		if match := pattern.FindStringSubmatch(userText); len(match) == 2 {
-			add("劳动合同期限：" + normalizeChineseNumber(match[1]) + "年")
-			break
+	topics := []struct {
+		keywords []string
+		fact     string
+	}{
+		{[]string{"工作流", "workflow"}, "议题：工作流"},
+		{[]string{"对话流", "chatflow"}, "议题：对话流"},
+		{[]string{"知识库", "dataset", "knowledge"}, "议题：知识库"},
+		{[]string{"节点", "node"}, "议题：节点配置"},
+		{[]string{"发布", "webapp", "api"}, "议题：发布与集成"},
+		{[]string{"模型", "供应商", "provider"}, "议题：模型供应商"},
+		{[]string{"团队", "成员", "权限"}, "议题：团队与权限"},
+		{[]string{"日志", "监控", "trace"}, "议题：监控与日志"},
+	}
+	for _, topic := range topics {
+		if containsAnyText(userText, topic.keywords) {
+			add(topic.fact)
 		}
-	}
-	if match := workedMonthsPattern.FindStringSubmatch(userText); len(match) == 2 {
-		add("已工作/试用时间：" + normalizeChineseNumber(match[1]) + "个月")
-	}
-	if containsAnyText(userText, []string{"新公司", "第一次签", "首次签"}) {
-		add("用人单位关系：新公司或首次约定")
-	}
-	if containsAnyText(userText, []string{"辞退", "解除合同", "解除劳动合同", "开除", "裁掉"}) {
-		add("争议类型：用人单位解除劳动合同")
-	}
-	if containsAnyText(userText, []string{"试用期"}) {
-		add("议题：试用期")
 	}
 	return facts
 }
@@ -121,25 +112,4 @@ func hasAnyPrefix(s string, prefixes ...string) bool {
 		}
 	}
 	return false
-}
-
-func normalizeChineseNumber(value string) string {
-	value = strings.TrimSpace(value)
-	digits := map[string]string{
-		"一": "1",
-		"二": "2",
-		"两": "2",
-		"三": "3",
-		"四": "4",
-		"五": "5",
-		"六": "6",
-		"七": "7",
-		"八": "8",
-		"九": "9",
-		"十": "10",
-	}
-	if digit, ok := digits[value]; ok {
-		return digit
-	}
-	return value
 }

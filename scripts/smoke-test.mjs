@@ -87,14 +87,14 @@ async function main() {
   // ---- public tools ----
   const pubTools = await get("/api/v1/customer/tools");
   const pubNames = (pubTools.data?.data || []).map((t) => t.name);
-  record("public_tools", pubNames.includes("search_labor_law"), { names: pubNames });
+  record("public_tools", pubNames.includes("search_product_docs"), { names: pubNames });
 
   // ---- admin status ----
   const status = await get("/api/v1/admin/status", { "X-Agent-API-Key": adminKey });
   const s = status.data?.data;
   record("admin_status",
     s?.agent?.planner === "llm"
-    && s?.tools?.public?.names?.includes("search_labor_law")
+    && s?.tools?.public?.names?.includes("search_product_docs")
     && !JSON.stringify(s).includes(adminKey),
     { app: s?.app, agent: s?.agent, tools: s?.tools });
 
@@ -105,7 +105,7 @@ async function main() {
   } catch { record("mcp_status", true, { note: "MCP not enabled, skipping" }); }
 
   // ---- customer chat ----
-  const custEvents = await chatSSE("/api/v1/customer/chat", "", "试用期一般多久？");
+  const custEvents = await chatSSE("/api/v1/customer/chat", "", "Dify 工作流和对话流有什么区别？");
   const custNames = custEvents.map((e) => e.event);
   record("customer_chat_ok", custNames.includes("message") && custNames.includes("done"));
   const custAnswer = [...custEvents].reverse().find((e) => e.event === "message" && e.data?.role === "assistant")?.data?.content || "";

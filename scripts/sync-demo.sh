@@ -48,7 +48,7 @@ rsync -avz --delete $DRY_RUN \
     --exclude='*.db-wal' \
     --exclude='coverage.out' \
     --exclude='node_modules/' \
-    --exclude='data/domains/labor_law.bge/' \
+    --exclude='data/domains/dify_docs/' \
     --exclude='data/agent_studio.db*' \
     "$SRC/" "$DST/"
 
