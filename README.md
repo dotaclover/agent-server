@@ -42,6 +42,22 @@ go run . serve --host 127.0.0.1 --port 9090
 
 `search_product_docs` 调用外部 RAG HTTP 服务，地址由 `CUSTOMER_RAG_API_ENDPOINT` 配置。当前仓库不包含本地 RAG 构建或检索服务。
 
+## 设计取舍：有意绑定 Dify 演示场景
+
+当前 Customer 端不是一个完全通用的知识库问答壳子，而是有意做成 **Dify 产品文档助手**。代码、Prompt、前端文案和工具描述里会出现 Dify、产品文档、工作流、知识库、发布等领域词，这是一个明确的演示取舍：
+
+- 面试或 HR 演示时，单一主题比“什么资料都能问”的通用壳子更稳定，回答也更像真实产品助手。
+- Dify 中文文档公开、内容中性、许可证清晰，适合展示 Agent 调工具、RAG 召回和最终综合回答。
+- Agent 侧会对“本地 / 线上 / 安装 / 版本 / 主要功能”等追问补充 Dify 语境，目的是提升短追问的召回质量。
+
+这不是因为不知道存在耦合，而是为了当前演示效果主动选择了领域绑定。若要扩展为通用知识库，建议把这些内容抽成配置：
+
+- Go 代码里也存在已知 hard code，例如 `services/tools/customer/registry.go` 中的工具名 `search_product_docs`、工具描述、示例 query，以及 `enrichProductDocsQuery` 对“本地 / 线上 / 安装 / 版本 / 主要功能”等问题补充 Dify 关键词。
+- 工具名从 `search_product_docs` 泛化为 `search_knowledge_base`。
+- Prompt、欢迎语、示例问题、工具描述改为按知识库 profile 加载。
+- 查询扩展词、同义词和领域关键词放到 RAG 的 `profile.json` 或 Agent 侧的 domain 配置里，不要长期写死在 Go 代码里。
+- 不同资料使用不同 domain，例如 `dify_docs`、`company_handbook`、`product_manual`。
+
 ### Operator 端
 
 访问：[http://127.0.0.1:9090/operator.html](http://127.0.0.1:9090/operator.html)
