@@ -103,6 +103,9 @@ func callRAGAPI(ctx context.Context, endpoint, query string) (string, error) {
 	var result struct {
 		Results []struct {
 			Content  string                 `json:"content"`
+			Text     string                 `json:"text"`
+			Title    string                 `json:"title"`
+			Section  string                 `json:"section"`
 			Score    float64                `json:"score"`
 			Source   string                 `json:"source"`
 			Metadata map[string]interface{} `json:"metadata"`
@@ -119,7 +122,17 @@ func callRAGAPI(ctx context.Context, endpoint, query string) (string, error) {
 	b.WriteString(fmt.Sprintf("查询：%s\n\n", result.Query))
 	b.WriteString("参考资料：\n\n")
 	for i, item := range result.Results {
-		b.WriteString(fmt.Sprintf("%d. %s\n", i+1, item.Content))
+		content := strings.TrimSpace(item.Content)
+		if content == "" {
+			content = strings.TrimSpace(item.Text)
+		}
+		b.WriteString(fmt.Sprintf("%d. %s\n", i+1, content))
+		if item.Title != "" {
+			b.WriteString(fmt.Sprintf("   标题：%s\n", item.Title))
+		}
+		if item.Section != "" {
+			b.WriteString(fmt.Sprintf("   条款：%s\n", item.Section))
+		}
 		if item.Source != "" {
 			b.WriteString(fmt.Sprintf("   来源：%s\n", item.Source))
 		}
